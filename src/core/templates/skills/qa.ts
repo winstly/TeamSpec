@@ -129,7 +129,7 @@ ${'`\`\`\`'}
 | 1  | [description]          | Crit/Maj/Mif/Min | [agent] | OPEN | - |
 | 2  | [description]          | Crit/Maj/Mif/Min | [agent] | OPEN | - |
 
-Resolution values: `Fixed inline, re-verified` | `KICKED_BACK_TO_MONITOR` | `RESOLVED_AFTER_MONITOR` | `OPEN`
+Resolution values: \`Fixed inline, re-verified\` | \`KICKED_BACK_TO_MONITOR\` | \`RESOLVED_AFTER_MONITOR\` | \`OPEN\`
 ${'`\`\`\`'}
 
 Critical and Major defects must be resolved before sign-off.
@@ -141,10 +141,10 @@ After triaging defects, severity determines the fix path.
 **Minor/Minimus — QA fixes inline:**
 - Apply the fix directly
 - Re-run verification for that defect
-- Mark defect `RESOLVED` in the Defect Register with resolution note
+- Mark defect \`RESOLVED\` in the Defect Register with resolution note
 
 **Major/Critical — Kick back to monitor:**
-- Mark defect `KICKED_BACK_TO_MONITOR` in Defect Register
+- Mark defect \`KICKED_BACK_TO_MONITOR\` in Defect Register
 - Stop QA report generation
 - Prompt user:
   > "Found [N] Major/Critical defect(s). These require agent rework. teamspec-monitor will be triggered to address the defect register. QA will re-run after fixes are complete."
@@ -160,7 +160,7 @@ After triaging defects, severity determines the fix path.
 For each Minor/Minimus defect marked RESOLVED:
 - Re-run verification to confirm the fix is effective
 - Collect evidence (test output, screenshot, etc.)
-- Update the Resolution column: `Fixed inline, re-verified`
+- Update the Resolution column: \`Fixed inline, re-verified\`
 
 Proceed to Phase 5.
 
