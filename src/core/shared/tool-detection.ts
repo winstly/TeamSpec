@@ -12,12 +12,12 @@ import { AI_TOOLS } from '../config.js';
  * Names of skill directories created by teamspec init.
  */
 export const SKILL_NAMES = [
+  'teamspec-propose',
   'teamspec-context',
-  'teamspec-recruit',
+  'teamspec-team',
   'teamspec-plan',
-  'teamspec-approve',
-  'teamspec-monitor',
-  'teamspec-qa',
+  'teamspec-execute',
+  'teamspec-verify',
   'teamspec-retro',
 ] as const;
 
@@ -27,12 +27,12 @@ export type SkillName = (typeof SKILL_NAMES)[number];
  * IDs of command templates created by teamspec init.
  */
 export const COMMAND_IDS = [
+  'propose',
   'context',
-  'recruit',
+  'team',
   'plan',
-  'approve',
-  'monitor',
-  'qa',
+  'execute',
+  'verify',
   'retro',
 ] as const;
 

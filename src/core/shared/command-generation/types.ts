@@ -46,7 +46,7 @@ export interface SkillTemplate {
  * Represents the content of a skill without any tool-specific formatting.
  */
 export interface SkillContent {
-  /** Skill identifier (e.g., 'teamspec-context', 'teamspec-recruit') */
+  /** Skill identifier (e.g., 'teamspec-context', 'teamspec-team') */
   id: string;
   /** Skill name */
   name: string;

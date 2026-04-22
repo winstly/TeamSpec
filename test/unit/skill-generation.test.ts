@@ -27,6 +27,7 @@ describe('skill-generation', () => {
   it('getSkillTemplates returns all 7 skill templates by default', () => {
     const result = getSkillTemplates();
     expect(result).toHaveLength(7);
+    expect(result.map(r => r.name)).toContain('teamspec-propose');
     expect(result.map(r => r.name)).toContain('teamspec-context');
     expect(result.map(r => r.name)).toContain('teamspec-retro');
   });
@@ -220,18 +221,18 @@ describe('generateCommands', () => {
         body: 'Read SPEC.md.',
       },
       {
-        id: 'recruit',
-        name: 'Recruit',
-        description: 'Recruit agents',
+        id: 'team',
+        name: 'Team',
+        description: 'Assemble agents',
         category: 'Team',
         tags: ['agents'],
-        body: 'Recruit new agents.',
+        body: 'Assemble agent team.',
       },
     ];
     const results = generateCommands(contents, claudeCommandAdapter);
     expect(results).toHaveLength(2);
     expect(results[0].path).toContain('context.md');
-    expect(results[1].path).toContain('recruit.md');
+    expect(results[1].path).toContain('team.md');
   });
 });
 

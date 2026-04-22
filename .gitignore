@@ -26,4 +26,5 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
-*-lock.json
+*.lock
+!package-lock.json

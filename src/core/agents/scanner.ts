@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync, existsSync } from 'fs';
-import { join, basename } from 'path';
+import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
+import { join, basename, extname } from 'path';
 
 export interface AgentInfo {
   name: string;
@@ -14,9 +14,15 @@ export interface ScanResult {
   errors: Array<{ path: string; error: string }>;
 }
 
+const SKIP_DIRS = new Set(['.git', '.github', 'scripts', 'examples']);
+
 /**
- * Scans a directory for agent subdirectories.
- * Each agent subdirectory contains an agent.json or similar metadata file.
+ * Scans a directory for agent subdirectories or category directories.
+ *
+ * Supports two repo layouts:
+ * 1. Flat: each subdirectory is an agent containing agent.json / agent.md / README.md
+ * 2. Nested: agents are .md files with YAML frontmatter inside category subdirectories
+ *            (e.g. engineering/engineering-frontend-developer.md)
  */
 export function scanAgencyAgents(repoPath: string): ScanResult {
   const result: ScanResult = {
@@ -41,13 +47,12 @@ export function scanAgencyAgents(repoPath: string): ScanResult {
   }
 
   for (const entry of entries) {
+    if (SKIP_DIRS.has(entry)) continue;
+
     const fullPath = join(repoPath, entry);
 
     let stat;
     try {
-      // Simple approach: statSync to check if it's a directory
-      // We avoid requiring fs.statSync for simplicity in stub
-      const { statSync } = require('fs');
       stat = statSync(fullPath);
     } catch {
       continue;
@@ -57,46 +62,94 @@ export function scanAgencyAgents(repoPath: string): ScanResult {
       continue;
     }
 
+    // Try agent-directory layout first (agent.json / agent.md / README.md)
     const agent = tryParseAgent(fullPath);
     if (agent) {
       result.agents.push(agent);
+      continue;
     }
+
+    // Fallback: treat as a category directory containing .md agent files
+    const categoryAgents = scanCategoryDir(fullPath);
+    result.agents.push(...categoryAgents);
   }
 
   return result;
 }
 
-function tryParseAgent(agentDir: string): AgentInfo | null {
-  // Priority: agent.json > agent.md > README.md
-  const candidates = [
-    { file: 'agent.json', parser: parseAgentJson },
-    { file: 'agent.md', parser: parseAgentMarkdown },
-    { file: 'README.md', parser: parseReadmeMarkdown },
-  ];
+/**
+ * Non-agent md filenames that should be skipped when scanning directories.
+ */
+const SKIP_MD_FILES = new Set([
+  'README.md',
+  'CONTRIBUTING.md',
+  'CONTRIBUTING_zh-CN.md',
+  'QUICKSTART.md',
+  'EXECUTIVE-BRIEF.md',
+  'SECURITY.md',
+  'LICENSE.md',
+  'CHANGELOG.md',
+]);
 
-  for (const { file, parser } of candidates) {
-    const filePath = join(agentDir, file);
-    if (existsSync(filePath)) {
-      try {
-        const content = readFileSync(filePath, 'utf-8');
-        const info = parser(content);
-        if (info) {
-          return { ...info, path: agentDir };
-        }
-      } catch {
-        // fall through to next candidate
-      }
-    }
+function tryParseAgent(agentDir: string): AgentInfo | null {
+  // Priority: agent.json > agent.md
+  const jsonPath = join(agentDir, 'agent.json');
+  if (existsSync(jsonPath)) {
+    try {
+      const content = readFileSync(jsonPath, 'utf-8');
+      const info = parseAgentJson(content);
+      if (info) return { ...info, path: agentDir };
+    } catch { /* fall through */ }
   }
 
-  // If no metadata file found, return a minimal entry based on directory name
-  const dirName = basename(agentDir);
-  return {
-    name: dirName,
-    description: `Agent: ${dirName}`,
-    capabilities: [],
-    path: agentDir,
-  };
+  const mdPath = join(agentDir, 'agent.md');
+  if (existsSync(mdPath)) {
+    try {
+      const content = readFileSync(mdPath, 'utf-8');
+      const info = parseAgentMarkdown(content);
+      if (info) return { ...info, path: agentDir };
+    } catch { /* fall through */ }
+  }
+
+  // README.md: only treat as agent if the directory is NOT a category directory
+  const readmePath = join(agentDir, 'README.md');
+  if (existsSync(readmePath)) {
+    if (isCategoryDirectory(agentDir)) return null;
+    try {
+      const content = readFileSync(readmePath, 'utf-8');
+      const info = parseReadmeMarkdown(content);
+      if (info) return { ...info, path: agentDir };
+    } catch { /* fall through */ }
+  }
+
+  // No agent metadata file found — this might be a category directory
+  return null;
+}
+
+/**
+ * Returns true if a directory looks like a category container
+ * (has subdirectories or non-README .md files), rather than an agent directory.
+ */
+function isCategoryDirectory(dir: string): boolean {
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return false;
+  }
+
+  for (const entry of entries) {
+    if (SKIP_DIRS.has(entry)) continue;
+    const fullPath = join(dir, entry);
+    try {
+      const st = statSync(fullPath);
+      // Any subdirectory → category
+      if (st.isDirectory()) return true;
+      // Non-README .md file → agent file → category
+      if (extname(entry).toLowerCase() === '.md' && !SKIP_MD_FILES.has(entry)) return true;
+    } catch { /* skip */ }
+  }
+  return false;
 }
 
 function parseAgentJson(content: string): AgentInfo | null {
@@ -203,6 +256,104 @@ function parseCapabilitiesField(raw: string): string[] {
     .split(/\r?\n/)
     .map((l) => l.replace(/^-\s*/, '').trim())
     .filter((l) => l.length > 0);
+}
+
+/**
+ * Parses a standalone agent .md file with YAML frontmatter.
+ * Used for the nested repo layout where agents are individual .md files
+ * inside category directories (e.g. engineering/engineering-frontend-developer.md).
+ */
+function parseAgentMdFile(content: string, filePath: string): AgentInfo | null {
+  if (!content.trimStart().startsWith('---')) {
+    // No frontmatter — parse as plain markdown (fallback)
+    const info = parseReadmeMarkdown(content);
+    if (!info) return null;
+    return { ...info, path: filePath.replace(/\.md$/, '') };
+  }
+
+  const afterFirst = content.slice(3);
+  const endIdx = afterFirst.indexOf('\n---');
+  if (endIdx === -1) {
+    return parseAgentMdFileWithStyleDelimiter(content, filePath);
+  }
+
+  const yaml = afterFirst.slice(0, endIdx);
+  const fields = parseYamlFrontmatter(yaml);
+  const name = fields['name'] || basename(filePath, '.md');
+
+  return {
+    name,
+    description: fields['description'] || '',
+    capabilities: parseCapabilitiesField(fields['capabilities'] || ''),
+    path: filePath.replace(/\.md$/, ''),
+  };
+}
+
+/**
+ * Handles YAML frontmatter closed by `---` that may not have a leading newline.
+ */
+function parseAgentMdFileWithStyleDelimiter(content: string, filePath: string): AgentInfo | null {
+  const parts = content.slice(3).split(/^---/m);
+  if (parts.length < 3) {
+    const info = parseReadmeMarkdown(content);
+    if (!info) return null;
+    return { ...info, path: filePath.replace(/\.md$/, '') };
+  }
+  const fields = parseYamlFrontmatter(parts[1]);
+  return {
+    name: fields['name'] || basename(filePath, '.md'),
+    description: fields['description'] || '',
+    capabilities: parseCapabilitiesField(fields['capabilities'] || ''),
+    path: filePath.replace(/\.md$/, ''),
+  };
+}
+
+/**
+ * Scans a category directory for agent .md files.
+ * Each .md file is expected to contain YAML frontmatter with agent metadata.
+ */
+function scanCategoryDir(categoryDir: string): AgentInfo[] {
+  const agents: AgentInfo[] = [];
+
+  let entries: string[];
+  try {
+    entries = readdirSync(categoryDir);
+  } catch {
+    return agents;
+  }
+
+  for (const entry of entries) {
+    if (SKIP_DIRS.has(entry)) continue;
+    const fullPath = join(categoryDir, entry);
+
+    let stat;
+    try {
+      stat = statSync(fullPath);
+    } catch {
+      continue;
+    }
+
+    // Support nested category subdirectories
+    if (stat.isDirectory()) {
+      agents.push(...scanCategoryDir(fullPath));
+      continue;
+    }
+
+    if (extname(entry).toLowerCase() !== '.md') continue;
+    if (SKIP_MD_FILES.has(entry)) continue;
+
+    try {
+      const content = readFileSync(fullPath, 'utf-8');
+      const agent = parseAgentMdFile(content, fullPath);
+      if (agent) {
+        agents.push(agent);
+      }
+    } catch {
+      // skip unreadable files
+    }
+  }
+
+  return agents;
 }
 
 /**

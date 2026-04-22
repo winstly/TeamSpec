@@ -41,6 +41,8 @@ export function initKnowledgeBase(options: KnowledgeBaseOptions): void {
   mkdirSync(join(teamspecRoot, 'knowledge', 'projects', projectName, 'retro'), { recursive: true });
   mkdirSync(join(teamspecRoot, 'knowledge', 'projects', projectName, 'decisions'), { recursive: true });
   mkdirSync(join(teamspecRoot, 'knowledge', 'templates'), { recursive: true });
+  mkdirSync(join(teamspecRoot, 'knowledge', 'shared'), { recursive: true });
+  mkdirSync(join(teamspecRoot, 'knowledge', 'shared', 'retros'), { recursive: true });
   mkdirSync(join(teamspecRoot, 'agents'), { recursive: true });
 
   // 写入知识库索引

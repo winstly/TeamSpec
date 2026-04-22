@@ -17,12 +17,12 @@ import { getConfiguredTools } from './shared/tool-detection.js';
  * TeamSpec stores skills under <tool>/skills/<workflow>/SKILL.md.
  */
 export const WORKFLOW_TO_SKILL_DIR: Record<WorkflowId, string> = {
+  propose: 'teamspec-propose',
   context: 'teamspec-context',
-  recruit: 'teamspec-recruit',
+  team: 'teamspec-team',
   plan: 'teamspec-plan',
-  approve: 'teamspec-approve',
-  monitor: 'teamspec-monitor',
-  qa: 'teamspec-qa',
+  execute: 'teamspec-execute',
+  verify: 'teamspec-verify',
   retro: 'teamspec-retro',
 };
 

@@ -10,8 +10,8 @@ import { WELCOME_ANIMATION } from './ascii-patterns.js';
 const MIN_WIDTH = 60;
 
 // Width of the ASCII art column (with padding)
-// T art: 5 cols × 2 chars = 10 chars wide
-const ART_COLUMN_WIDTH = 12;
+// T art: 7 cols × 2 chars = 14 chars wide
+const ART_COLUMN_WIDTH = 14;
 
 /**
  * Welcome text content (right column)

@@ -8,7 +8,7 @@ export const GLOBAL_CONFIG_FILE_NAME = 'config.json';
 export const GLOBAL_DATA_DIR_NAME = 'teamspec';
 
 // TypeScript types
-export type Profile = 'core' | 'custom';
+export type Profile = 'quick' | 'core' | 'custom';
 export type Delivery = 'both' | 'skills' | 'commands';
 
 // TypeScript interfaces

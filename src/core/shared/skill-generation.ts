@@ -4,38 +4,39 @@
  * Provides skill template entries and content generation for all TeamSpec agent skills.
  */
 import type { SkillContent, SkillTemplate, SkillTemplateEntry, CommandTemplateEntry } from './command-generation/types.js';
+import type { WorkflowId } from '../profiles.js';
 import { getContextSkillTemplate } from '../templates/skills/context.js';
-import { getRecruitSkillTemplate } from '../templates/skills/recruit.js';
+import { getTeamSkillTemplate } from '../templates/skills/team.js';
 import { getPlanSkillTemplate } from '../templates/skills/plan.js';
-import { getApproveSkillTemplate } from '../templates/skills/approve.js';
-import { getMonitorSkillTemplate } from '../templates/skills/monitor.js';
-import { getQASkillTemplate } from '../templates/skills/qa.js';
+import { getExecuteSkillTemplate } from '../templates/skills/execute.js';
+import { getVerifySkillTemplate } from '../templates/skills/verify.js';
 import { getRetroSkillTemplate } from '../templates/skills/retro.js';
+import { getProposeSkillTemplate } from '../templates/skills/propose.js';
 
 export type { SkillContent, SkillTemplateEntry, CommandTemplateEntry, SkillTemplate };
 
 /**
  * All available skill templates keyed by workflow ID.
  */
-export const SKILL_TEMPLATES: Record<string, () => SkillContent> = {
+export const SKILL_TEMPLATES: Record<WorkflowId, () => SkillContent> = {
+  propose: () => ({ id: 'teamspec-propose', ...getProposeSkillTemplate() }),
   context: () => ({ id: 'teamspec-context', ...getContextSkillTemplate() }),
-  recruit: () => ({ id: 'teamspec-recruit', ...getRecruitSkillTemplate() }),
+  team: () => ({ id: 'teamspec-team', ...getTeamSkillTemplate() }),
   plan: () => ({ id: 'teamspec-plan', ...getPlanSkillTemplate() }),
-  approve: () => ({ id: 'teamspec-approve', ...getApproveSkillTemplate() }),
-  monitor: () => ({ id: 'teamspec-monitor', ...getMonitorSkillTemplate() }),
-  qa: () => ({ id: 'teamspec-qa', ...getQASkillTemplate() }),
+  execute: () => ({ id: 'teamspec-execute', ...getExecuteSkillTemplate() }),
+  verify: () => ({ id: 'teamspec-verify', ...getVerifySkillTemplate() }),
   retro: () => ({ id: 'teamspec-retro', ...getRetroSkillTemplate() }),
 };
 
 /**
  * Returns skill content for the given workflow IDs.
  *
- * @param workflowIds - Array of workflow IDs (e.g. ['context', 'recruit'])
+ * @param workflowIds - Array of workflow IDs (e.g. ['context', 'team'])
  * @returns Array of SkillContent ready for generateSkillContent()
  */
 export function getSkillTemplates(workflowIds?: readonly string[]): SkillContent[] {
   const keys = workflowIds ?? Object.keys(SKILL_TEMPLATES);
-  return keys.filter((k) => k in SKILL_TEMPLATES).map((k) => SKILL_TEMPLATES[k]());
+  return keys.filter((k) => k in SKILL_TEMPLATES).map((k) => SKILL_TEMPLATES[k as WorkflowId]());
 }
 
 /**

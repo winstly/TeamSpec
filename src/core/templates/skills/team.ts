@@ -1,17 +1,24 @@
 /**
- * Skill Template: teamspec-recruit
+ * Skill Template: teamspec-team
  *
  * Triggered after teamspec-context is complete.
  * Reads the agent manifest and recommends agents suited to the project.
  */
 import type { SkillTemplate } from '../../shared/command-generation/types.js';
 
-export function getRecruitSkillTemplate(): SkillTemplate {
+export function getTeamSkillTemplate(): SkillTemplate {
   return {
-    name: 'teamspec-recruit',
+    name: 'teamspec-team',
     description:
-      'Use when project context has been gathered and an agent team needs to be assembled from the manifest.',
-    instructions: `Enter recruit mode. Your goal is to assemble the right team of agents for the project based on the established context.
+      'Assemble an agent team from the manifest based on project context. Use when context has been gathered and the right agents need to be selected.',
+    instructions: `Enter team-assembly mode. Your goal is to assemble the right team of agents for the project based on the established context.
+
+**Input**: Optionally specify a project name. If omitted:
+- Infer from conversation context if the user mentioned a project
+- Auto-select if only one active project exists under teamspec/knowledge/projects/
+- If ambiguous, list available projects and use the **AskUserQuestion tool** to let the user select
+
+Always announce: "Assembling team for project: <name>"
 
 ---
 
@@ -45,7 +52,7 @@ Read 'teamspec/agents/manifest.json'. For each listed agent, note:
 
 Map project requirements to agent capabilities. Ask:
 
-${'`\`\`\`'}
+\`\`\`
 ┌─────────────────────────────────────────────────────┐
 │           PROJECT AGENT NEED ANALYSIS              │
 ├─────────────────────────────────────────────────────┤
@@ -70,7 +77,7 @@ ${'`\`\`\`'}
 │  [ ] Greenfield vs. brownfield                     │
 │                                                     │
 └─────────────────────────────────────────────────────┘
-${'`\`\`\`'}
+\`\`\`
 
 ### Step 4: Recommend the Team
 
@@ -82,7 +89,7 @@ For each recommended agent, provide:
 
 Structure your recommendation:
 
-${'`\`\`\`'}
+\`\`\`
 ## Agent Team Recommendation
 
 ### Team Size: [N agents]
@@ -105,20 +112,20 @@ ${'`\`\`\`'}
 
 ### Team Lead
 Recommend which agent should act as the primary coordinator for this project.
-${'`\`\`\`'}
+\`\`\`
 
 ### Step 5: Write the Team Artifact
 
 Write the team recommendation to:
-${'`\`\`\`'}
+\`\`\`
 teamspec/knowledge/projects/<project>/team.md
-${'`\`\`\`'}
+\`\`\`
 
 Create the directory if it does not exist. Overwrite only if the user confirms.
 
 ### Step 6: Prompt Continuation
 
-> "Team assembled. 'teamspec/knowledge/projects/<project>/team.md' is ready. Proceed to teamspec-plan to break down the work and define execution strategy?"
+> "Team assembled at 'teamspec/knowledge/projects/<project>/team.md'. Ready to proceed to teamspec-plan to break down the work?"
 
 ---
 
@@ -126,9 +133,18 @@ Create the directory if it does not exist. Overwrite only if the user confirms.
 
 - **Don't assign agents not in the manifest** - Only recommend agents listed in 'teamspec/agents/manifest.json'. If no suitable agent exists, note this gap and suggest what capability is missing.
 - **Don't over-assign** - Resist the urge to bring in every agent. A lean team is easier to coordinate. Default to the minimum viable team.
-- **Do consider complexity** - A small, simple project may only need 1–2 agents. Don't add overhead for projects that don't need it.
+- **Do consider complexity** - A small, simple project may only need 1-2 agents. Don't add overhead for projects that don't need it.
 - **Do note coordination dependencies** - If agent B depends on agent A's output, say so explicitly.
-- **Do flag capability gaps** - If the project requires something no agent can handle well, flag it for human review.`,
+- **Do flag capability gaps** - If the project requires something no agent can handle well, flag it for human review.
+
+**Phase Navigation**
+
+You can move between phases fluidly - you are NOT locked to a linear path:
+- If team composition reveals context gaps -> update 'context.md' and re-run teamspec-context
+- If plan reveals team gaps -> update 'team.md' and re-run teamspec-team
+- After fixing any phase -> continue from that point forward
+
+DO NOT silently absorb problems into the current phase. If the source of the issue is upstream, flag it and offer to loop back.`,
     license: 'MIT',
     compatibility: 'Requires teamspec workspace structure and agent manifest.',
     metadata: { author: 'teamspec', version: '1.0' },

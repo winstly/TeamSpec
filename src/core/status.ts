@@ -5,6 +5,7 @@ import { AI_TOOLS } from './config.js';
 import { getToolStates } from './shared/index.js';
 import { getGlobalConfig } from './global-config.js';
 import { readManifest, type ManifestData } from './agents/manifest.js';
+import { getProfileWorkflows } from './profiles.js';
 
 const TEAMSPEC_DIR_NAME = 'teamspec';
 
@@ -219,7 +220,7 @@ export class StatusCommand {
     }
 
     manifest.agents.forEach((agent) => {
-      const role = (agent as any).role || 'unknown';
+      const role = agent.capabilities?.[0] || 'unknown';
       console.log(`  ${chalk.yellow('▸')} ${chalk.bold(agent.name)} ${chalk.dim(`[${role}]`)}`);
       if (agent.description) {
         console.log(chalk.dim(`    ${agent.description}`));
@@ -293,8 +294,9 @@ export class StatusCommand {
       const profile = config.profile || 'core';
       const delivery = config.delivery || 'both';
       const kb = config.knowledgeBase || 'local';
+      const workflows = getProfileWorkflows(profile, config.workflows);
 
-      console.log(`  Profile:  ${chalk.bold(profile)}`);
+      console.log(`  Profile:  ${chalk.bold(profile)} (${workflows.length} workflows: ${workflows.join(', ')})`);
       console.log(`  Delivery: ${chalk.bold(delivery)}`);
       console.log(`  Knowledge Base: ${chalk.bold(kb)}`);
 

@@ -8,12 +8,12 @@ import {
 describe('SKILL_NAMES', () => {
   it('should contain all 7 team spec skill names', () => {
     expect(SKILL_NAMES).toHaveLength(7);
+    expect(SKILL_NAMES).toContain('teamspec-propose');
     expect(SKILL_NAMES).toContain('teamspec-context');
-    expect(SKILL_NAMES).toContain('teamspec-recruit');
+    expect(SKILL_NAMES).toContain('teamspec-team');
     expect(SKILL_NAMES).toContain('teamspec-plan');
-    expect(SKILL_NAMES).toContain('teamspec-approve');
-    expect(SKILL_NAMES).toContain('teamspec-monitor');
-    expect(SKILL_NAMES).toContain('teamspec-qa');
+    expect(SKILL_NAMES).toContain('teamspec-execute');
+    expect(SKILL_NAMES).toContain('teamspec-verify');
     expect(SKILL_NAMES).toContain('teamspec-retro');
   });
 });
@@ -21,12 +21,12 @@ describe('SKILL_NAMES', () => {
 describe('COMMAND_IDS', () => {
   it('should contain all 7 command IDs', () => {
     expect(COMMAND_IDS).toHaveLength(7);
+    expect(COMMAND_IDS).toContain('propose');
     expect(COMMAND_IDS).toContain('context');
-    expect(COMMAND_IDS).toContain('recruit');
+    expect(COMMAND_IDS).toContain('team');
     expect(COMMAND_IDS).toContain('plan');
-    expect(COMMAND_IDS).toContain('approve');
-    expect(COMMAND_IDS).toContain('monitor');
-    expect(COMMAND_IDS).toContain('qa');
+    expect(COMMAND_IDS).toContain('execute');
+    expect(COMMAND_IDS).toContain('verify');
     expect(COMMAND_IDS).toContain('retro');
   });
 

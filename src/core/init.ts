@@ -11,24 +11,24 @@ import ora from 'ora';
 import * as fs from 'fs';
 import { execSync } from 'node:child_process';
 import { TEAMSPEC_VERSION } from './shared/version.js';
-import { generateSkillContent } from './shared/skill-generation.js';
+import { generateSkillContent, type SkillTemplate } from './shared/skill-generation.js';
 import { initKnowledgeBase } from './knowledge/base.js';
 import { generateManifest } from './agents/manifest.js';
 import type { AIToolOption } from './available-tools.js';
 import { AI_TOOLS } from './config.js';
-import { getGlobalConfig, type Delivery, type Profile } from './global-config.js';
-import { getProfileWorkflows } from './profiles.js';
+import { getGlobalConfig, saveGlobalConfig, type Delivery, type Profile } from './global-config.js';
+import { getProfileWorkflows, type WorkflowId } from './profiles.js';
 import { WORKFLOW_TO_SKILL_DIR } from './profile-sync-drift.js';
 import { isInteractive } from '../utils/interactive.js';
 import { scanInstalledWorkflows, migrateIfNeeded } from './migration.js';
 import {
   getContextSkillTemplate,
-  getRecruitSkillTemplate,
+  getTeamSkillTemplate,
   getPlanSkillTemplate,
-  getApproveSkillTemplate,
-  getMonitorSkillTemplate,
-  getQASkillTemplate,
+  getExecuteSkillTemplate,
+  getVerifySkillTemplate,
   getRetroSkillTemplate,
+  getProposeSkillTemplate,
 } from './templates/skills/index.js';
 
 const TEAMSPEC_DIR = 'teamspec';
@@ -45,15 +45,15 @@ type InitCommandOptions = {
 };
 
 // Map of workflow ID -> skill template getter function
-type SkillTemplateGetter = () => ReturnType<typeof getContextSkillTemplate>;
+type SkillTemplateGetter = () => SkillTemplate;
 
 const SKILL_TEMPLATE_GETTERS: Record<string, SkillTemplateGetter> = {
+  propose: getProposeSkillTemplate,
   context: getContextSkillTemplate,
-  recruit: getRecruitSkillTemplate,
+  team: getTeamSkillTemplate,
   plan: getPlanSkillTemplate,
-  approve: getApproveSkillTemplate,
-  monitor: getMonitorSkillTemplate,
-  qa: getQASkillTemplate,
+  execute: getExecuteSkillTemplate,
+  verify: getVerifySkillTemplate,
   retro: getRetroSkillTemplate,
 };
 
@@ -97,6 +97,9 @@ export class InitCommand {
       console.log(chalk.yellow('No tools selected. Nothing to set up.'));
       return;
     }
+
+    // Profile selection (if not already set)
+    await this.ensureProfile();
 
     // Create teamspec directory structure
     await this.createDirectoryStructure(teamspecPath);
@@ -145,15 +148,17 @@ export class InitCommand {
       if (!stats.isDirectory()) {
         throw new Error(`Path "${projectPath}" is not a directory`);
       }
-    } catch (error: any) {
-      if (error.code === 'ENOENT') {
+    } catch (error: unknown) {
+      const code = error instanceof Error && 'code' in error ? (error as Record<string, unknown>).code : undefined;
+      const message = error instanceof Error ? error.message : String(error);
+      if (code === 'ENOENT') {
         await fs.promises.mkdir(projectPath, { recursive: true });
         return;
       }
-      if (error.message && error.message.includes('not a directory')) {
+      if (message && message.includes('not a directory')) {
         throw error;
       }
-      throw new Error(`Cannot access path "${projectPath}": ${error.message}`);
+      throw new Error(`Cannot access path "${projectPath}": ${message}`);
     }
 
     // Check write permissions by attempting to write a temp file
@@ -169,6 +174,46 @@ export class InitCommand {
   private canPromptInteractively(): boolean {
     if (this.toolsArg !== undefined) return false;
     return isInteractive({});
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // PROFILE SELECTION
+  // ═══════════════════════════════════════════════════════════
+
+  private async ensureProfile(): Promise<void> {
+    const config = getGlobalConfig();
+    if (config.profile && config.profile !== 'core') {
+      // Profile already set by user (not default)
+      return;
+    }
+
+    if (!this.canPromptInteractively()) {
+      // Non-interactive: use default profile
+      return;
+    }
+
+    // Prompt user to select a profile
+    const Select = (await import('@inquirer/select')).default;
+    const profile = await Select<Profile>({
+      message: 'Select workflow profile:',
+      choices: [
+        {
+          name: 'quick — One-step propose + retro (small projects, 2 skills)',
+          value: 'quick',
+        },
+        {
+          name: 'core — Full pipeline: context → team → plan → execute → verify → retro (6 skills)',
+          value: 'core',
+        },
+        {
+          name: 'custom — Choose your own workflows',
+          value: 'custom',
+        },
+      ],
+    });
+
+    config.profile = profile;
+    saveGlobalConfig(config);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -428,7 +473,7 @@ export class InitCommand {
           if (!getter) continue;
 
           const skillTemplate = getter();
-          const dirName = WORKFLOW_TO_SKILL_DIR[workflowId as keyof typeof WORKFLOW_TO_SKILL_DIR];
+          const dirName = WORKFLOW_TO_SKILL_DIR[workflowId as WorkflowId];
           if (!dirName) continue;
 
           const skillDir = path.join(skillsBaseDir, dirName);

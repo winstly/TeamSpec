@@ -10,10 +10,18 @@ export function getRetroSkillTemplate(): SkillTemplate {
   return {
     name: 'teamspec-retro',
     description:
-      'Use after completing a task, hitting a blocker, making a significant decision, or being asked to record thinking.',
+      'Capture lessons learned, decisions, and insights after completing work. Can be triggered at any time by any agent or the user.',
     instructions: `Enter retro mode. You have just completed some work - a task, a phase, or a decision. Take a moment to reflect and capture what you learned.
 
 **This skill can be triggered at any time, by any agent, or by the user.** It is informal and lightweight. Not every retro needs to produce a formal document.
+
+**Input**: Optionally specify:
+- A project name (if in project context)
+- A brief description of what was just done
+
+If omitted:
+- Infer from conversation context
+- If no project context, create a general/shared retro
 
 ---
 
@@ -78,30 +86,30 @@ Before writing, briefly think about:
 Decide where to write the retro based on its scope:
 
 **Per-agent learning** (pattern, technique, lesson about doing work):
-${'`\`\`\`'}
+\`\`\`
 teamspec/knowledge/agents/<agent-name>/retros/[date]-[brief-title].md
-${'`\`\`\`'}
+\`\`\`
 
 **Per-project learning** (project-specific decision, blocker, insight):
-${'`\`\`\`'}
+\`\`\`
 teamspec/knowledge/projects/<project>/retros/[date]-[brief-title].md
-${'`\`\`\`'}
+\`\`\`
 
 **Shared knowledge** (pattern that applies to many projects):
-${'`\`\`\`'}
+\`\`\`
 teamspec/knowledge/shared/retros/[date]-[brief-title].md
-${'`\`\`\`'}
+\`\`\`
 
 **Architectural decision** (cross-project referenceable record):
-${'`\`\`\`'}
+\`\`\`
 teamspec/knowledge/projects/<project>/decisions/[date]-[brief-title].md
-${'`\`\`\`'}
+\`\`\`
 
 Default to the most specific appropriate location. A retro about a specific project's architecture belongs in the project folder. A retro about a debugging technique belongs in the agent folder.
 
 ### Step 3: Write the Retro
 
-${'`\`\`\`'}
+\`\`\`
 ## Retro: [Brief Descriptive Title]
 
 **Date**: [date]
@@ -149,7 +157,7 @@ ${'`\`\`\`'}
 ## Related Artifacts
 
 - [Links to any files, logs, or decisions related to this retro]
-${'`\`\`\`'}
+\`\`\`
 
 ### Step 4: Be Concise - Less Is More
 
@@ -176,7 +184,16 @@ Or if triggered at phase end:
 - **Don't wait for perfection** - Retro is most valuable when written soon after the work is done. Write it now, even if it's rough.
 - **Do be honest about failures** - A retro that only lists successes is self-congratulatory, not useful. Include what didn't work.
 - **Do look for patterns** - If you find yourself writing the same retro twice, that's a sign you need a shared pattern doc, not more retros.
-- **Do tag related retros** - If a new retro relates to an older one, link to it. Patterns emerge from connected retros over time.`,
+- **Do tag related retros** - If a new retro relates to an older one, link to it. Patterns emerge from connected retros over time.
+
+**Phase Navigation**
+
+You can move between phases fluidly - you are NOT locked to a linear path:
+- If retro reveals a gap in the current plan or context -> flag it and offer to loop back to teamspec-context or teamspec-plan
+- If retro captures a pattern worth sharing -> write it to teamspec/knowledge/shared/retros/
+- After capturing the retro -> continue from the point where you left off
+
+DO NOT silently absorb problems into the current phase. If the source of the issue is upstream, flag it and offer to loop back.`,
     license: 'MIT',
     compatibility: 'Requires teamspec workspace structure.',
     metadata: { author: 'teamspec', version: '1.0' },
